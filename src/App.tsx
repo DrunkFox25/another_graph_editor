@@ -18,11 +18,6 @@ import { initBuildMap } from "./components/presets.ts"
 
 import { useState, useEffect } from "react";
 
-
-
-
-
-
 function App() {
   const [urlparams, seturlparams] = useState<URLSearchParams>(new URLSearchParams(window.location.search));
 
