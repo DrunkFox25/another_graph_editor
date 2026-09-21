@@ -14,9 +14,18 @@ import { SettingsFormatList } from "./types";
 
 import { getDefaultGraph } from "./components/utils";
 
-import { useState } from "react";
+import { initBuildMap } from "./components/presets.ts"
+
+import { useState, useEffect } from "react";
+
+
+
+
+
 
 function App() {
+  const [urlparams, seturlparams] = useState<URLSearchParams>(new URLSearchParams(window.location.search));
+
   const [testCaseNumber, setTestCaseNumber] = useState<number>(0);
   const [currentId, setCurrentId] = useState<number>(0);
   const [testCases, setTestCases] = useState<TestCases>(() => {
@@ -29,7 +38,7 @@ function App() {
     return init;
   });
 
-  const [directed, setDirected] = useState<boolean>(false);
+  const [directed, setDirected] = useState<boolean>(urlparams.get('dir') === "true");
 
   const [tabs, setTabs] = useState<number[]>([0]);
   const [inputs, setInputs] = useState<number[]>([0]);
@@ -98,15 +107,15 @@ function App() {
     showVBCC: false,
     showBridges: false,
     showMSTs: false,
-    treeMode: false,
-    bipartiteMode: false,
+    treeMode: urlparams.get('gt') === "tree",
+    bipartiteMode: urlparams.get('gt') === "bi",
     lockMode: false,
     markedNodes:
       localStorage.getItem("markedNodes") !== null
         ? localStorage.getItem("markedNodes") == "true"
         : false,
     fixedMode: false,
-    multiedgeMode: true,
+    multiedgeMode: !(urlparams.get('single') === "true"),
     edgePhysics:
       localStorage.getItem("edgePhysics") !== null
         ? localStorage.getItem("edgePhysics") == "true"
@@ -170,6 +179,20 @@ function App() {
         ? localStorage.getItem("randomizerEdgeLabelMax")!
         : "",
   });
+
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const indexing: number = urlparams.get('ind') !== null ? Number.parseInt(urlparams.get('ind')) : 0;
+      const urlgraph = urlparams.get('in');
+      const urlType = urlparams !== null ? Number.parseInt(urlparams.get('t')) : -1;
+      if(urlgraph !== null && 0 <= urlType && urlType <= 9){
+        const rows: string[][] = urlgraph.split('!').map((str) => str.split(' '));
+        initBuildMap.get(urlType)(indexing, rows, testCaseNumber, setTestCaseNumber, setTestCases, setTabs, setCurrentId);
+      }
+      //console.log('hello');
+    }, 0);
+  }, []);
 
   return (
     <>
@@ -301,6 +324,28 @@ function App() {
           className="sm:top-2 lg:top-2 sm:right-2 lg:right-2 absolute flex
             space-x-3 font-jetbrains text-base"
         >
+          <div
+            className="flex space-x-2 border-2 border-border rounded-lg
+              justify-between items-center z-20 px-2 h-9"
+          >
+            <button
+              className="text-text"
+              onClick={() => {//sorry my implementation is half assed, I don't want to modify too much of the codebase, so it will only support unlabeled graphs as input
+                var url = window.location.search;
+                var a = url.indexOf("?");
+                if(a < 0 || a > url.length) a = url.length;
+                url = url.substr(0, a);
+                url += "?load=true";
+                if(settings.treeMode) url += "&gt=tree";
+                if(settings.bipartiteMode) url += "&gt=bi";
+                if(!settings.multiedgeMode) url += "&single=true";
+                if(directed) url += "&dir=true";
+                //&in=&t=1
+              }}
+            >
+              COPY SHARE URL
+            </button>
+          </div>
           <div
             className="flex space-x-2 border-2 border-border rounded-lg
               justify-between items-center z-20 px-2 h-9"
